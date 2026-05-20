@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "Ecopontos",
+    "slug": "ecopontos",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "ecopontos",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.example.ecopontos",
+      "config": {
+        "googleMapsApiKey": "AIzaSyAnZJpSrG_gtOskyWl_TTTqeYPryWwOctI"
+      },
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Este app usa sua localização para centralizar o mapa.",
+        "NSPhotoLibraryUsageDescription": "Este app precisa acessar suas fotos para anexar imagem ao ecoponto."
+      }
+    },
+    "android": {
+      "package": "com.example.ecopontos",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "READ_EXTERNAL_STORAGE"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyAnZJpSrG_gtOskyWl_TTTqeYPryWwOctI"
+        }
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O app precisa acessar suas fotos para anexar imagem ao ecoponto."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "O app usa localização para centralizar o mapa."
+        }
+      ]
+    ]
+  }
+}

@@ -168,7 +168,11 @@ export default function NovoEcoponto() {
           {fotoUri ? (
             <Image source={{ uri: fotoUri }} style={styles.fotoPreview} />
           ) : (
+<<<<<<< HEAD
             <Text style={styles.fotoTexto}>📷 Toque para adicionar foto</Text>
+=======
+            <Text style={styles.fotoTexto}>Toque para adicionar foto</Text>
+>>>>>>> 41801cb (atualizações)
           )}
         </Pressable>
         {fotoUri && (

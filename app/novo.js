@@ -152,22 +152,7 @@ export default function NovoEcoponto() {
           {fotoUri ? (
             <Image source={{ uri: fotoUri }} style={styles.fotoPreview} />
           ) : (
-<<<<<<< HEAD
-<<<<<<< HEAD
-            <Text style={styles.fotoTexto}>📷 Toque para adicionar foto</Text>
-=======
             <Text style={styles.fotoTexto}>Toque para adicionar foto</Text>
->>>>>>> 41801cb (atualizações)
-=======
-            <View style={styles.uploadConteudo}>
-              <View style={styles.uploadIconWrap}>
-                <Ionicons name="cloud-upload-outline" size={44} color="#111" />
-              </View>
-              <Text style={styles.uploadTexto}>Toque para enviar uma foto</Text>
-              <Text style={styles.uploadOu}>OU</Text>
-              <Text style={styles.uploadBrowse}>Galeria</Text>
-            </View>
->>>>>>> 7ab771e (Atualizações de layout e dimensões/correções)
           )}
         </Pressable>
 

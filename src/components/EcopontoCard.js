@@ -1,8 +1,9 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 export default function EcopontoCard({ ecoponto, onPress }) {
-  const { nome, bairro, cidade, fotoUri } = ecoponto;
-  const localizacao = [bairro, cidade].filter(Boolean).join(" - ");
+  const { nome, bairro, cidade, fotoUri, categoria } = ecoponto;
+  const localizacao = [bairro, cidade].filter(Boolean).join(" · ");
 
   return (
     <Pressable
@@ -14,7 +15,7 @@ export default function EcopontoCard({ ecoponto, onPress }) {
           <Image source={{ uri: fotoUri }} style={styles.thumb} />
         ) : (
           <View style={[styles.thumb, styles.placeholder]}>
-            <Text style={styles.placeholderText}>♻️</Text>
+            <Ionicons name="leaf" size={24} color="#2e7d32" />
           </View>
         )}
       </View>
@@ -27,8 +28,13 @@ export default function EcopontoCard({ ecoponto, onPress }) {
             {localizacao}
           </Text>
         )}
+        {!!categoria && (
+          <View style={styles.badge}>
+            <Text style={styles.badgeTexto}>{categoria}</Text>
+          </View>
+        )}
       </View>
-      <Text style={styles.chevron}>›</Text>
+      <Ionicons name="chevron-forward" size={18} color="#ccc" />
     </Pressable>
   );
 }
@@ -38,50 +44,58 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#fff",
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 12,
-    marginBottom: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#f0f0f0",
     shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    elevation: 1,
   },
   pressed: {
-    opacity: 0.7,
+    opacity: 0.75,
   },
   thumbWrapper: {
     marginRight: 12,
   },
   thumb: {
-    width: 56,
-    height: 56,
-    borderRadius: 8,
-    backgroundColor: "#e8f5e9",
+    width: 54,
+    height: 54,
+    borderRadius: 10,
+    backgroundColor: "#f5f5f5",
   },
   placeholder: {
     alignItems: "center",
     justifyContent: "center",
-  },
-  placeholderText: {
-    fontSize: 28,
+    backgroundColor: "#f0f7f0",
   },
   info: {
     flex: 1,
+    gap: 2,
   },
   nome: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
-    color: "#1b5e20",
+    color: "#111",
   },
   local: {
-    marginTop: 2,
-    fontSize: 13,
-    color: "#555",
-  },
-  chevron: {
-    fontSize: 28,
+    fontSize: 12,
     color: "#999",
-    marginLeft: 8,
+  },
+  badge: {
+    alignSelf: "flex-start",
+    backgroundColor: "#f0f0f0",
+    borderRadius: 100,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginTop: 4,
+  },
+  badgeTexto: {
+    fontSize: 10,
+    color: "#555",
+    fontWeight: "600",
   },
 });

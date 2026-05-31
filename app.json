@@ -10,11 +10,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.example.ecopontos",
       "config": {
-<<<<<<< HEAD
-        "googleMapsApiKey": "AIzaSyAnZJpSrG_gtOskyWl_TTTqeYPryWwOctI"
-=======
         "googleMapsApiKey": "COLE_SUA_CHAVE_AQUI"
->>>>>>> 41801cb (atualizações)
       },
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Este app usa sua localização para centralizar o mapa.",
@@ -30,11 +26,7 @@
       ],
       "config": {
         "googleMaps": {
-<<<<<<< HEAD
           "apiKey": "AIzaSyAnZJpSrG_gtOskyWl_TTTqeYPryWwOctI"
-=======
-          "apiKey": "COLE_SUA_CHAVE_AQUI"
->>>>>>> 41801cb (atualizações)
         }
       }
     },

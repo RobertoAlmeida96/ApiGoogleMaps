@@ -26,7 +26,7 @@ export default function MapaEcoponto({ latitude, longitude, titulo, descricao })
 
 const styles = StyleSheet.create({
   wrap: {
-    height: 280,
+    flex: 1,
     backgroundColor: "#e0e0e0",
   },
 });

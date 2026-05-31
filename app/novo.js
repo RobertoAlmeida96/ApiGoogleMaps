@@ -1,4 +1,6 @@
+import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -16,25 +18,20 @@ import {
 import { geocodificarEndereco } from "../src/services/geocode";
 import { salvarEcoponto } from "../src/storage/ecopontos";
 
+const CATEGORIAS = ["Eletrônicos", "Recicláveis", "Entulho"];
+
 export default function NovoEcoponto() {
   const router = useRouter();
-  const [nome, setNome] = useState("");
-  const [descricao, setDescricao] = useState("");
-  const [rua, setRua] = useState("");
-  const [numero, setNumero] = useState("");
-  const [bairro, setBairro] = useState("");
-  const [cidade, setCidade] = useState("");
-  const [cep, setCep] = useState("");
+  const [categoria, setCategoria] = useState(null);
   const [fotoUri, setFotoUri] = useState(null);
+  const [localizacao, setLocalizacao] = useState("");
+  const [detectando, setDetectando] = useState(false);
   const [salvando, setSalvando] = useState(false);
 
   async function escolherFoto() {
     const permissao = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissao.granted) {
-      Alert.alert(
-        "Permissão necessária",
-        "Permita acesso às fotos para anexar uma imagem."
-      );
+      Alert.alert("Permissão necessária", "Permita acesso às fotos para anexar uma imagem.");
       return;
     }
     const resultado = await ImagePicker.launchImageLibraryAsync({
@@ -48,53 +45,68 @@ export default function NovoEcoponto() {
     }
   }
 
-  async function salvar() {
-    if (!nome.trim() || !rua.trim() || !cidade.trim()) {
-      Alert.alert(
-        "Campos obrigatórios",
-        "Preencha pelo menos nome, rua e cidade."
-      );
+  async function detectarLocalizacao() {
+    setDetectando(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permissão negada", "Permita o acesso à localização nas configurações.");
+        return;
+      }
+      const pos = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      const [addr] = await Location.reverseGeocodeAsync({
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+      });
+      if (addr) {
+        const partes = [addr.street, addr.district, addr.city].filter(Boolean);
+        setLocalizacao(partes.join(", "));
+      }
+    } catch {
+      Alert.alert("Erro", "Não foi possível detectar a localização.");
+    } finally {
+      setDetectando(false);
+    }
+  }
+
+  async function enviar() {
+    if (!localizacao.trim()) {
+      Alert.alert("Localização necessária", "Digite ou detecte sua localização.");
       return;
     }
 
     setSalvando(true);
     try {
-      const endereco = [
-        [rua, numero].filter(Boolean).join(", "),
-        bairro,
-        cidade,
-        cep,
-      ]
-        .filter(Boolean)
-        .join(", ");
-
       let coordenadas = null;
       try {
-        coordenadas = await geocodificarEndereco(endereco);
-      } catch (err) {
+        coordenadas = await geocodificarEndereco(localizacao);
+      } catch {
         Alert.alert(
-          "Erro ao localizar endereço",
-          "Não foi possível consultar o serviço de mapas. Verifique sua conexão e tente novamente."
+          "Erro ao localizar",
+          "Não foi possível consultar o serviço de mapas. Verifique sua conexão."
         );
         return;
       }
 
       if (!coordenadas) {
         Alert.alert(
-          "Endereço não localizado",
-          "Não conseguimos encontrar coordenadas para este endereço. Revise os campos (cidade e CEP ajudam) e tente novamente."
+          "Endereço não encontrado",
+          "Tente ser mais específico. Inclua cidade ou CEP."
         );
         return;
       }
 
       await salvarEcoponto({
-        nome: nome.trim(),
-        descricao: descricao.trim(),
-        rua: rua.trim(),
-        numero: numero.trim(),
-        bairro: bairro.trim(),
-        cidade: cidade.trim(),
-        cep: cep.trim(),
+        nome: localizacao.trim(),
+        descricao: categoria ? `Categoria: ${categoria}` : "",
+        categoria: categoria || "Recicláveis",
+        rua: localizacao.trim(),
+        numero: "",
+        bairro: "",
+        cidade: "",
+        cep: "",
         fotoUri,
         latitude: coordenadas.latitude,
         longitude: coordenadas.longitude,
@@ -114,83 +126,95 @@ export default function NovoEcoponto() {
       <ScrollView
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <Campo
-          label="Nome *"
-          value={nome}
-          onChangeText={setNome}
-          placeholder="Ex.: Ecoponto Centro"
-        />
-        <Campo
-          label="Descrição"
-          value={descricao}
-          onChangeText={setDescricao}
-          placeholder="O que é coletado, horários, etc."
-          multiline
-        />
-        <Campo
-          label="Rua *"
-          value={rua}
-          onChangeText={setRua}
-          placeholder="Ex.: Av. Paulista"
-        />
-        <View style={styles.linha}>
-          <View style={styles.colCurta}>
-            <Campo
-              label="Número"
-              value={numero}
-              onChangeText={setNumero}
-              keyboardType="numeric"
-            />
-          </View>
-          <View style={styles.colLarga}>
-            <Campo
-              label="Bairro"
-              value={bairro}
-              onChangeText={setBairro}
-            />
-          </View>
+        {/* Categorias */}
+        <Text style={styles.sectionLabel}>Selecionar Categoria:</Text>
+        <View style={styles.chips}>
+          {CATEGORIAS.map((cat) => (
+            <Pressable
+              key={cat}
+              style={[styles.chip, categoria === cat && styles.chipAtivo]}
+              onPress={() => setCategoria(cat === categoria ? null : cat)}
+            >
+              <Text style={[styles.chipTexto, categoria === cat && styles.chipTextoAtivo]}>
+                {cat}
+              </Text>
+            </Pressable>
+          ))}
         </View>
-        <Campo label="Cidade *" value={cidade} onChangeText={setCidade} />
-        <Campo
-          label="CEP"
-          value={cep}
-          onChangeText={setCep}
-          keyboardType="numeric"
-          placeholder="00000-000"
-        />
 
-        <Text style={styles.label}>Foto (opcional)</Text>
+        {/* Área de upload */}
         <Pressable
-          style={({ pressed }) => [styles.fotoBox, pressed && styles.pressed]}
+          style={({ pressed }) => [styles.uploadArea, pressed && styles.uploadPressed]}
           onPress={escolherFoto}
         >
           {fotoUri ? (
             <Image source={{ uri: fotoUri }} style={styles.fotoPreview} />
           ) : (
 <<<<<<< HEAD
+<<<<<<< HEAD
             <Text style={styles.fotoTexto}>📷 Toque para adicionar foto</Text>
 =======
             <Text style={styles.fotoTexto}>Toque para adicionar foto</Text>
 >>>>>>> 41801cb (atualizações)
+=======
+            <View style={styles.uploadConteudo}>
+              <View style={styles.uploadIconWrap}>
+                <Ionicons name="cloud-upload-outline" size={44} color="#111" />
+              </View>
+              <Text style={styles.uploadTexto}>Toque para enviar uma foto</Text>
+              <Text style={styles.uploadOu}>OU</Text>
+              <Text style={styles.uploadBrowse}>Galeria</Text>
+            </View>
+>>>>>>> 7ab771e (Atualizações de layout e dimensões/correções)
           )}
         </Pressable>
+
         {fotoUri && (
-          <Pressable onPress={() => setFotoUri(null)}>
+          <Pressable onPress={() => setFotoUri(null)} style={styles.removerWrap}>
             <Text style={styles.removerFoto}>Remover foto</Text>
           </Pressable>
         )}
 
+        {/* Campo de localização */}
+        <View style={styles.inputWrap}>
+          <Ionicons name="location-outline" size={18} color="#aaa" style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Digite sua localização..."
+            placeholderTextColor="#aaa"
+            value={localizacao}
+            onChangeText={setLocalizacao}
+          />
+        </View>
+
+        <Pressable
+          onPress={detectarLocalizacao}
+          disabled={detectando}
+          style={styles.detectarWrap}
+        >
+          <Ionicons
+            name="navigate-outline"
+            size={14}
+            color={detectando ? "#aaa" : "#2e7d32"}
+          />
+          <Text style={[styles.detectar, detectando && styles.detectarDisabled]}>
+            {detectando ? "Detectando..." : "Detectar Localização"}
+          </Text>
+        </Pressable>
+
+        {/* Botão Enviar */}
         <Pressable
           style={({ pressed }) => [
-            styles.botaoSalvar,
-            (pressed || salvando) && styles.pressed,
+            styles.botaoEnviar,
+            (pressed || salvando) && styles.botaoPressed,
           ]}
-          onPress={salvar}
+          onPress={enviar}
           disabled={salvando}
         >
-          <Text style={styles.botaoSalvarTexto}>
-            {salvando ? "Salvando..." : "Salvar ecoponto"}
+          <Text style={styles.botaoEnviarTexto}>
+            {salvando ? "Enviando..." : "Enviar"}
           </Text>
         </Pressable>
       </ScrollView>
@@ -198,92 +222,152 @@ export default function NovoEcoponto() {
   );
 }
 
-function Campo({ label, multiline, ...props }) {
-  return (
-    <View style={styles.campoWrap}>
-      <Text style={styles.label}>{label}</Text>
-      <TextInput
-        style={[styles.input, multiline && styles.inputMultilinha]}
-        placeholderTextColor="#999"
-        multiline={multiline}
-        {...props}
-      />
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
+  flex: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
   scroll: {
-    padding: 16,
-    paddingBottom: 48,
+    padding: 20,
+    paddingBottom: 40,
   },
-  campoWrap: {
-    marginBottom: 14,
-  },
-  label: {
-    fontSize: 13,
-    color: "#444",
-    marginBottom: 6,
+  sectionLabel: {
+    fontSize: 14,
     fontWeight: "600",
+    color: "#111",
+    marginBottom: 12,
   },
-  input: {
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: "#dcdcdc",
-    fontSize: 15,
-    color: "#222",
-  },
-  inputMultilinha: {
-    minHeight: 70,
-    textAlignVertical: "top",
-  },
-  linha: {
+  chips: {
     flexDirection: "row",
-    gap: 10,
+    gap: 8,
+    marginBottom: 24,
+    flexWrap: "wrap",
   },
-  colCurta: { width: 110 },
-  colLarga: { flex: 1 },
-  fotoBox: {
-    height: 160,
-    borderRadius: 10,
+  chip: {
+    paddingHorizontal: 18,
+    paddingVertical: 9,
+    borderRadius: 100,
+    borderWidth: 1.5,
+    borderColor: "#ddd",
     backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#dcdcdc",
+  },
+  chipAtivo: {
+    borderColor: "#111",
+    backgroundColor: "#111",
+  },
+  chipTexto: {
+    fontSize: 13,
+    color: "#555",
+    fontWeight: "500",
+  },
+  chipTextoAtivo: {
+    color: "#fff",
+  },
+  uploadArea: {
+    borderWidth: 1.5,
+    borderColor: "#ccc",
     borderStyle: "dashed",
+    borderRadius: 14,
+    minHeight: 210,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
     marginBottom: 8,
+    backgroundColor: "#fafafa",
+  },
+  uploadPressed: {
+    opacity: 0.85,
+  },
+  uploadConteudo: {
+    alignItems: "center",
+    gap: 10,
+    padding: 24,
+  },
+  uploadIconWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "#f0f0f0",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  uploadTexto: {
+    fontSize: 15,
+    color: "#333",
+    textAlign: "center",
+    fontWeight: "500",
+  },
+  uploadOu: {
+    fontSize: 13,
+    color: "#aaa",
+  },
+  uploadBrowse: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#111",
+    textDecorationLine: "underline",
   },
   fotoPreview: {
     width: "100%",
-    height: "100%",
+    height: 210,
   },
-  fotoTexto: {
-    color: "#666",
-    fontSize: 14,
+  removerWrap: {
+    alignItems: "flex-end",
+    marginBottom: 16,
+    marginTop: 4,
   },
   removerFoto: {
     color: "#c62828",
     fontSize: 13,
-    textAlign: "right",
-    marginBottom: 16,
   },
-  pressed: { opacity: 0.7 },
-  botaoSalvar: {
-    backgroundColor: "#2e7d32",
-    borderRadius: 10,
-    paddingVertical: 14,
+  inputWrap: {
+    flexDirection: "row",
     alignItems: "center",
-    marginTop: 12,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    marginTop: 16,
+    backgroundColor: "#fafafa",
   },
-  botaoSalvarTexto: {
+  inputIcon: {
+    marginRight: 8,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 13,
+    fontSize: 15,
+    color: "#111",
+  },
+  detectarWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginTop: 8,
+    marginBottom: 28,
+  },
+  detectar: {
+    fontSize: 13,
+    color: "#2e7d32",
+    fontWeight: "600",
+  },
+  detectarDisabled: {
+    color: "#aaa",
+  },
+  botaoEnviar: {
+    backgroundColor: "#111",
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: "center",
+  },
+  botaoPressed: {
+    opacity: 0.75,
+  },
+  botaoEnviarTexto: {
     color: "#fff",
-    fontWeight: "700",
     fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: 0.3,
   },
 });

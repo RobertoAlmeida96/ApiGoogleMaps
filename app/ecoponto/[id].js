@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -7,7 +8,7 @@ import {
   Linking,
   Platform,
   Pressable,
-  ScrollView,
+  SafeAreaView,
   StyleSheet,
   Text,
   View,
@@ -72,7 +73,7 @@ export default function DetalhesEcoponto() {
   if (carregando) {
     return (
       <View style={styles.centro}>
-        <ActivityIndicator size="large" color="#2e7d32" />
+        <ActivityIndicator size="large" color="#111" />
       </View>
     );
   }
@@ -80,6 +81,7 @@ export default function DetalhesEcoponto() {
   if (!ecoponto) {
     return (
       <View style={styles.centro}>
+        <Ionicons name="alert-circle-outline" size={48} color="#ccc" />
         <Text style={styles.erro}>Ecoponto não encontrado.</Text>
       </View>
     );
@@ -92,142 +94,208 @@ export default function DetalhesEcoponto() {
     ecoponto.cep,
   ]
     .filter(Boolean)
-    .join(" - ");
+    .join(" · ");
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <MapaEcoponto
-        latitude={ecoponto.latitude}
-        longitude={ecoponto.longitude}
-        titulo={ecoponto.nome}
-        descricao={enderecoCompleto}
-      />
+    <SafeAreaView style={styles.safe}>
+      {/* Botão voltar flutuante */}
+      <Pressable
+        style={({ pressed }) => [styles.voltarBtn, pressed && styles.pressed]}
+        onPress={() => router.back()}
+      >
+        <Ionicons name="chevron-back" size={22} color="#111" />
+      </Pressable>
 
-      {ecoponto.fotoUri ? (
-        <Image source={{ uri: ecoponto.fotoUri }} style={styles.foto} />
-      ) : null}
-
-      <View style={styles.bloco}>
-        <Text style={styles.nome}>{ecoponto.nome}</Text>
-        {!!ecoponto.descricao && (
-          <Text style={styles.descricao}>{ecoponto.descricao}</Text>
-        )}
-        {!!enderecoCompleto && (
-          <View style={styles.linhaInfo}>
-            <Text style={styles.infoLabel}>Endereço</Text>
-            <Text style={styles.infoValor}>{enderecoCompleto}</Text>
-          </View>
-        )}
-        <View style={styles.linhaInfo}>
-          <Text style={styles.infoLabel}>Coordenadas</Text>
-          <Text style={styles.infoValor}>
-            {ecoponto.latitude.toFixed(5)}, {ecoponto.longitude.toFixed(5)}
-          </Text>
-        </View>
+      {/* Mapa ocupa toda a área superior */}
+      <View style={styles.mapaWrap}>
+        <MapaEcoponto
+          latitude={ecoponto.latitude}
+          longitude={ecoponto.longitude}
+          titulo={ecoponto.nome}
+          descricao={enderecoCompleto}
+        />
       </View>
 
-      <Pressable
-        style={({ pressed }) => [styles.botao, pressed && styles.pressed]}
-        onPress={abrirNoGoogleMaps}
-      >
-        <Text style={styles.botaoTexto}>Abrir no Google Maps</Text>
-      </Pressable>
+      {/* Bottom sheet */}
+      <View style={styles.sheet}>
+        {/* Foto se disponível */}
+        {ecoponto.fotoUri ? (
+          <Image source={{ uri: ecoponto.fotoUri }} style={styles.foto} />
+        ) : null}
 
-      <Pressable
-        style={({ pressed }) => [
-          styles.botao,
-          styles.botaoExcluir,
-          pressed && styles.pressed,
-        ]}
-        onPress={confirmarExcluir}
-      >
-        <Text style={[styles.botaoTexto, styles.botaoExcluirTexto]}>
-          Excluir ecoponto
+        {/* Info + badge de categoria */}
+        <View style={styles.infoRow}>
+          <View style={styles.infoTexto}>
+            <Text style={styles.nome} numberOfLines={2}>
+              {ecoponto.nome}
+            </Text>
+            {!!enderecoCompleto && (
+              <Text style={styles.endereco} numberOfLines={1}>
+                {enderecoCompleto}
+              </Text>
+            )}
+          </View>
+          {ecoponto.categoria ? (
+            <View style={styles.badge}>
+              <Text style={styles.badgeTexto}>{ecoponto.categoria}</Text>
+            </View>
+          ) : null}
+        </View>
+
+        {/* Termos */}
+        <Text style={styles.termos}>
+          Ao confirmar, você concorda com os{" "}
+          <Text style={styles.termosLink}>Termos de Serviço</Text>
+          {" "}e{" "}
+          <Text style={styles.termosLink}>Política de Privacidade</Text>.
         </Text>
-      </Pressable>
-    </ScrollView>
+
+        {/* Botões Cancel / Confirm */}
+        <View style={styles.botoes}>
+          <Pressable
+            style={({ pressed }) => [styles.botaoCancelar, pressed && styles.pressed]}
+            onPress={confirmarExcluir}
+          >
+            <Text style={styles.botaoCancelarTexto}>Excluir</Text>
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [styles.botaoConfirmar, pressed && styles.pressed]}
+            onPress={abrirNoGoogleMaps}
+          >
+            <Text style={styles.botaoConfirmarTexto}>Confirmar</Text>
+          </Pressable>
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    paddingBottom: 32,
+  safe: {
+    flex: 1,
+    backgroundColor: "#fff",
   },
   centro: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    padding: 24,
+    gap: 12,
   },
   erro: {
-    color: "#c62828",
     fontSize: 15,
+    color: "#888",
+  },
+  voltarBtn: {
+    position: "absolute",
+    top: 52,
+    left: 16,
+    zIndex: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  pressed: {
+    opacity: 0.75,
+  },
+  mapaWrap: {
+    flex: 1,
+  },
+  sheet: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    paddingBottom: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: -4 },
+    elevation: 12,
   },
   foto: {
-    width: "92%",
-    height: 200,
-    alignSelf: "center",
-    marginTop: 16,
-    borderRadius: 10,
-    backgroundColor: "#e0e0e0",
-  },
-  bloco: {
-    backgroundColor: "#fff",
-    margin: 16,
-    padding: 16,
+    width: "100%",
+    height: 130,
     borderRadius: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    marginBottom: 14,
+    backgroundColor: "#f0f0f0",
+  },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 12,
+  },
+  infoTexto: {
+    flex: 1,
   },
   nome: {
     fontSize: 20,
     fontWeight: "700",
-    color: "#1b5e20",
-    marginBottom: 4,
+    color: "#111",
+    marginBottom: 3,
   },
-  descricao: {
-    fontSize: 14,
-    color: "#444",
-    marginBottom: 12,
-    lineHeight: 20,
+  endereco: {
+    fontSize: 13,
+    color: "#888",
   },
-  linhaInfo: {
-    marginTop: 8,
+  badge: {
+    marginLeft: 12,
+    backgroundColor: "#111",
+    borderRadius: 100,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    alignSelf: "flex-start",
   },
-  infoLabel: {
+  badgeTexto: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  termos: {
     fontSize: 12,
-    color: "#777",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
+    color: "#999",
+    lineHeight: 18,
+    marginBottom: 16,
   },
-  infoValor: {
-    fontSize: 15,
-    color: "#222",
-    marginTop: 2,
+  termosLink: {
+    textDecorationLine: "underline",
+    color: "#666",
   },
-  botao: {
-    backgroundColor: "#2e7d32",
-    marginHorizontal: 16,
-    marginTop: 8,
-    paddingVertical: 13,
-    borderRadius: 10,
+  botoes: {
+    flexDirection: "row",
+    gap: 10,
+    paddingBottom: 4,
+  },
+  botaoCancelar: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderColor: "#e0e0e0",
+    borderRadius: 12,
+    paddingVertical: 14,
     alignItems: "center",
   },
-  botaoExcluir: {
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#c62828",
-  },
-  botaoTexto: {
-    color: "#fff",
-    fontWeight: "700",
+  botaoCancelarTexto: {
     fontSize: 15,
+    fontWeight: "600",
+    color: "#111",
   },
-  botaoExcluirTexto: {
-    color: "#c62828",
+  botaoConfirmar: {
+    flex: 1,
+    backgroundColor: "#111",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
   },
-  pressed: { opacity: 0.7 },
+  botaoConfirmarTexto: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#fff",
+  },
 });

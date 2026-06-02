@@ -4,8 +4,8 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 const TABS = [
   { href: "/", label: "Início", icon: "home-outline", iconActive: "home" },
-  { href: "/pagamento", label: "Pagamento", icon: "card-outline", iconActive: "card" },
-  { href: "/recompensas", label: "Recompensas", icon: "gift-outline", iconActive: "gift" },
+  { href: "/ecopontos", label: "Ecopontos", icon: "leaf-outline", iconActive: "leaf" },
+  { href: "/agendamentos", label: "Agendamentos", icon: "calendar-outline", iconActive: "calendar" },
   { href: "/conta", label: "Conta", icon: "person-outline", iconActive: "person" },
 ];
 
